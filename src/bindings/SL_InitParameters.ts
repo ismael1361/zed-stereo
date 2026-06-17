@@ -2,6 +2,35 @@ import koffi from "koffi";
 import { SL_INPUT_TYPE, SL_RESOLUTION, SL_FLIP_MODE, SL_DEPTH_MODE, SL_UNIT, SL_COORDINATE_SYSTEM } from "./global";
 import { SL_Resolution, SL_ResolutionStruct } from "./SL_Resolution";
 
+type SL_InitParametersStructValue = {
+    input_type: SL_INPUT_TYPE;
+    resolution: SL_RESOLUTION;
+    camera_fps: number;
+    camera_device_id: number;
+    camera_image_flip: SL_FLIP_MODE;
+    camera_disable_self_calib: boolean;
+    enable_right_side_measure: boolean;
+    svo_real_time_mode: boolean;
+    depth_mode: SL_DEPTH_MODE;
+    depth_stabilization: number;
+    depth_minimum_distance: number;
+    depth_maximum_distance: number;
+    coordinate_unit: SL_UNIT;
+    coordinate_system: SL_COORDINATE_SYSTEM;
+    sdk_gpu_id: number;
+    sdk_verbose: number;
+    sensors_required: boolean;
+    enable_image_enhancement: boolean;
+    open_timeout_sec: number;
+    async_grab_camera_recovery: boolean;
+    grab_compute_capping_fps: number;
+    enable_image_validity_check: boolean;
+    maximum_working_resolution: {
+        width: number;
+        height: number;
+    };
+};
+
 export const SL_InitParametersStruct = koffi.struct("SL_InitParameters", {
     input_type: "int",
     resolution: "int",
@@ -52,6 +81,36 @@ export class SL_InitParameters {
     grab_compute_capping_fps: number = 0;
     enable_image_validity_check: boolean = false;
     maximum_working_resolution: SL_Resolution = new SL_Resolution(0, 0);
+
+    static fromStruct(value: SL_InitParametersStructValue): SL_InitParameters {
+        const initParameters = new SL_InitParameters();
+
+        initParameters.input_type = value.input_type;
+        initParameters.resolution = value.resolution;
+        initParameters.camera_fps = value.camera_fps;
+        initParameters.camera_device_id = value.camera_device_id;
+        initParameters.camera_image_flip = value.camera_image_flip;
+        initParameters.camera_disable_self_calib = value.camera_disable_self_calib;
+        initParameters.enable_right_side_measure = value.enable_right_side_measure;
+        initParameters.svo_real_time_mode = value.svo_real_time_mode;
+        initParameters.depth_mode = value.depth_mode;
+        initParameters.depth_stabilization = value.depth_stabilization;
+        initParameters.depth_minimum_distance = value.depth_minimum_distance;
+        initParameters.depth_maximum_distance = value.depth_maximum_distance;
+        initParameters.coordinate_unit = value.coordinate_unit;
+        initParameters.coordinate_system = value.coordinate_system;
+        initParameters.sdk_gpu_id = value.sdk_gpu_id;
+        initParameters.sdk_verbose = value.sdk_verbose;
+        initParameters.sensors_required = value.sensors_required;
+        initParameters.enable_image_enhancement = value.enable_image_enhancement;
+        initParameters.open_timeout_sec = value.open_timeout_sec;
+        initParameters.async_grab_camera_recovery = value.async_grab_camera_recovery;
+        initParameters.grab_compute_capping_fps = value.grab_compute_capping_fps;
+        initParameters.enable_image_validity_check = value.enable_image_validity_check;
+        initParameters.maximum_working_resolution = SL_Resolution.fromStruct(value.maximum_working_resolution);
+
+        return initParameters;
+    }
 
     toStruct(): object {
         return {

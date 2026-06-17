@@ -14,6 +14,10 @@ export class SL_Resolution {
         this.height = height;
     }
 
+    static fromStruct(value: { width: number; height: number }): SL_Resolution {
+        return new SL_Resolution(value.width, value.height);
+    }
+
     toStruct(): object {
         return {
             width: this.width,

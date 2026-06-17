@@ -1,9 +1,12 @@
 import koffi from "koffi";
 import path from "path";
 import fs from "fs";
-import { SL_InitParameters } from "./SL_InitParameters";
+import { SL_InitParameters, SL_InitParametersStruct } from "./SL_InitParameters";
+import { SL_CommunicationParameters } from "./SL_CommunicationParameters";
+import { SL_RuntimeParameters, SL_RuntimeParametersStruct } from "./SL_RuntimeParameters";
+import { CUctx_st } from "./CUctx_st";
 
-export { SL_InitParameters };
+export { SL_InitParameters, SL_CommunicationParameters, SL_RuntimeParameters, CUctx_st };
 
 if (process.platform === "win32") {
     const zedBinPath = "C:\\Program Files (x86)\\ZED SDK\\bin";
@@ -190,4 +193,60 @@ export function sl_open_camera_from_stream(
             "int sl_open_camera_from_stream(int camera_id, struct SL_InitParameters* init_parameters, const char* ip, int stream_port, const char* output_file, const char* opt_settings_path, const char* opencv_calib_path)",
         )
         .apply(null, [cameraId, initParameters.toStruct(), ip, streamPort, outputFile, optSettingsPath, opencvCalibPath]);
+}
+
+/**
+ * Set this camera as a data provider for the Fusion module.
+ * Metadata is exchanged with the Fusion.
+ * @param cameraId Id of the camera instance.
+ * @param commParameters A structure containing all the initial parameters. Default: a preset of SL_CommunicationParameters.
+ * @returns SL_ERROR_CODE_SUCCESS if everything went fine, SL_ERROR_CODE_FAILURE otherwise.
+ */
+export function sl_start_publishing(cameraId: number, commParameters: SL_CommunicationParameters): number {
+    return lib.func("int sl_start_publishing(int camera_id, struct SL_CommunicationParameters* comm_params)").apply(null, [cameraId, commParameters.toStruct()]);
+}
+
+/**
+ * Set this camera as normal camera (without data providing).
+ * Stop to send camera data to fusion.
+ * @param cameraId Id of the camera instance.
+ * @returns SL_ERROR_CODE_SUCCESS if everything went fine, SL_ERROR_CODE_FAILURE otherwise.
+ */
+export function sl_stop_publishing(cameraId: number): number {
+    return lib.func("int sl_stop_publishing(int camera_id)").apply(null, [cameraId]);
+}
+
+/**
+ * Gets the Camera-created CUDA context for sharing it with other CUDA-capable libraries.
+ * This can be useful for sharing GPU memories.
+ * @param cameraId Id of the camera instance.
+ * @returns The CUDA context handle.
+ */
+export function sl_get_cuda_context(cameraId: number): CUctx_st {
+    const ptr = lib.func("void* sl_get_cuda_context(int camera_id)").apply(null, [cameraId]);
+    return new CUctx_st(ptr);
+}
+
+/**
+ * Returns the SL_InitParameters used.
+ * It corresponds to the structure given as argument to the sl_open_camera() function.
+ * @param cameraId Id of the camera instance.
+ * @returns SL_InitParameters containing the parameters used to initialize the camera.
+ */
+export function sl_get_init_parameters(cameraId: number): SL_InitParameters {
+    const ptr = lib.func("void* sl_get_init_parameters(int camera_id)").apply(null, [cameraId]);
+    const value = koffi.decode(ptr, SL_InitParametersStruct);
+    return SL_InitParameters.fromStruct(value);
+}
+
+/**
+ * Returns the SL_RuntimeParameters used.
+ * It corresponds to the structure given as argument to the sl_grab() function.
+ * @param cameraId Id of the camera instance.
+ * @returns SL_RuntimeParameters containing the parameters that define the behavior of the sl_grab function.
+ */
+export function sl_get_runtime_parameters(cameraId: number): SL_RuntimeParameters {
+    const ptr = lib.func("void* sl_get_runtime_parameters(int camera_id)").apply(null, [cameraId]);
+    const decoded = koffi.decode(ptr, SL_RuntimeParametersStruct);
+    return SL_RuntimeParameters.fromStruct(decoded);
 }
