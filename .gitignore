@@ -1,0 +1,9 @@
+# .gitignore
+node_modules/
+dist/
+# Ignorar os lixos de compilação do C++
+native/build/
+native/.cmake/
+
+node_modules
+bin
