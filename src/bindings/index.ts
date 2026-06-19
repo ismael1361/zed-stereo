@@ -4,9 +4,11 @@ import fs from "fs";
 import { SL_InitParameters, SL_InitParametersStruct } from "./SL_InitParameters";
 import { SL_CommunicationParameters } from "./SL_CommunicationParameters";
 import { SL_RuntimeParameters, SL_RuntimeParametersStruct } from "./SL_RuntimeParameters";
+import { SL_PositionalTrackingParameters, SL_PositionalTrackingParametersStruct } from "./SL_PositionalTrackingParameters";
 import { CUctx_st } from "./CUctx_st";
+import { SL_MODULE } from "./global/enums";
 
-export { SL_InitParameters, SL_CommunicationParameters, SL_RuntimeParameters, CUctx_st };
+export { SL_InitParameters, SL_CommunicationParameters, SL_RuntimeParameters, SL_PositionalTrackingParameters, CUctx_st };
 
 if (process.platform === "win32") {
     const zedBinPath = "C:\\Program Files (x86)\\ZED SDK\\bin";
@@ -236,7 +238,7 @@ export function sl_get_cuda_context(cameraId: number): CUctx_st {
 export function sl_get_init_parameters(cameraId: number): SL_InitParameters {
     const ptr = lib.func("void* sl_get_init_parameters(int camera_id)").apply(null, [cameraId]);
     const value = koffi.decode(ptr, SL_InitParametersStruct);
-    return SL_InitParameters.fromStruct(value);
+    return new SL_InitParameters().fromStruct(value);
 }
 
 /**
@@ -248,5 +250,51 @@ export function sl_get_init_parameters(cameraId: number): SL_InitParameters {
 export function sl_get_runtime_parameters(cameraId: number): SL_RuntimeParameters {
     const ptr = lib.func("void* sl_get_runtime_parameters(int camera_id)").apply(null, [cameraId]);
     const decoded = koffi.decode(ptr, SL_RuntimeParametersStruct);
-    return SL_RuntimeParameters.fromStruct(decoded);
+    return new SL_RuntimeParameters().fromStruct(decoded);
+}
+
+/**
+ * Returns the SL_PositionalTrackingParameters used.
+ * It corresponds to the structure given as argument to the sl_enable_positional_tracking() method.
+ * @param cameraId Id of the camera instance.
+ * @returns SL_PositionalTrackingParameters containing the parameters used for positional tracking initialization.
+ */
+export function sl_get_positional_tracking_parameters(cameraId: number): SL_PositionalTrackingParameters {
+    const ptr = lib.func("void* sl_get_positional_tracking_parameters(int camera_id)").apply(null, [cameraId]);
+    const decoded = koffi.decode(ptr, SL_PositionalTrackingParametersStruct);
+    return new SL_PositionalTrackingParameters().fromStruct(decoded);
+}
+
+/**
+ * Close an opened camera and disable the textures.
+ * @param cameraId Id of the camera instance.
+ */
+export function sl_close_camera(cameraId: number): void {
+    lib.func("void sl_close_camera(int camera_id)").apply(null, [cameraId]);
+}
+
+/**
+ * Defines a region of interest to focus on for all the SDK, discarding other parts.
+ * @param cameraId Id of the camera instance.
+ * @param roiMask The matrix defining the requested region of interest, pixels lower than 127 will be discarded from all modules: depth, positional tracking, etc. If empty, set all pixels as valid. The mask can be either at lower or higher resolution than the current images.
+ * @param module Array of booleans indicating which modules should apply the ROI. Default: all modules.
+ * @returns An SL_ERROR_CODE if something went wrong.
+ */
+export function sl_set_region_of_interest(cameraId: number, roiMask: Buffer, module: boolean[] = []): number {
+    // Se o array module estiver vazio, cria um array com todos os valores true
+    const moduleArray = module.length > 0 ? module : new Array(6).fill(true);
+    return lib.func("int sl_set_region_of_interest(int camera_id, void* roi_mask, bool module[6])").apply(null, [cameraId, roiMask, moduleArray]);
+}
+
+/**
+ * Get the previously set or computed region of interest.
+ * @param cameraId Id of the camera instance.
+ * @param roiMask The Mat returned (must be pre-allocated).
+ * @param width Width of the returned mask.
+ * @param height Height of the returned mask.
+ * @param module Specify which module to get the ROI from.
+ * @returns An SL_ERROR_CODE if something went wrong.
+ */
+export function sl_get_region_of_interest(cameraId: number, roiMask: Buffer, width: number, height: number, module: SL_MODULE): number {
+    return lib.func("int sl_get_region_of_interest(int camera_id, void* roi_mask, int width, int height, int module)").apply(null, [cameraId, roiMask, width, height, module]);
 }
